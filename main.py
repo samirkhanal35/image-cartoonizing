@@ -105,9 +105,10 @@ def resize_img(img):
 
 def Cartoonizing():
     img_rgb = variables.img
-    # img_oil = cv2.xphoto.oilPainting(img_rgb, 3, 1)
+    # img_oil = cv2.xp
+    # hoto.oilPainting(img_rgb, 3, 1)
     numDownSamples = 2 # number of downscaling steps
-    numBilateralFilters = 5 # number of bilateral filtering steps
+    numBilateralFilters = 4 # number of bilateral filtering steps
 
     # -- STEP 1 --
     # downsample image using Gaussian pyramid
@@ -119,7 +120,8 @@ def Cartoonizing():
     # one large filter
     
     for _ in range(numBilateralFilters):
-        img_color = cv2.bilateralFilter(img_color, 10, 15, 15)
+        img_color = cv2.bilateralFilter(img_color, 7, 15, 20) 
+        #cv2.bilateralFilter(src, d, sigmaColor, sigmaSpace[, dst[, borderType]]) 
 
     # upsample image to original size
     
@@ -127,49 +129,68 @@ def Cartoonizing():
         img_color = cv2.pyrUp(img_color)
 
     
+    # img_gray = cv2.GaussianBlur(img_color, (21, 21), 0)
+    # img_weight = cv2.addWeighted(img_gray, 1.5, img_gray, -0.9, 0)
     
-    """# img_pencil, img1 = cv2.pencilSketch(img_rgb, sigma_s=60, sigma_r=0.05, shade_factor=0.05) 
+    #sharpening the image
+    filter = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    img_sharp = cv2.filter2D(img_color,-1,filter)
+    img_sharp = cv2.filter2D(img_sharp,-1,filter)
+    # img_final = cv2.blur(img_sharp,(5,5))
+    img_final = cv2.GaussianBlur(img_sharp, (9, 9), 0)
+    img_final = cv2.filter2D(img_final,-1,filter)
+
+    #sharpening the image
+    # filter = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    # img_weight = cv2.filter2D(img_weight,-1,filter)
     
-    kernel = np.ones((3,3), np.uint8) 
+    #histogram_equalization
     
-    # img_pencil = cv2.medianBlur(img_pencil, 5)
-    # img_pencil = cv2.adaptiveThreshold(img_pencil,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,11,2)
-    # img_pencil = cv2.dilate(img_pencil, kernel)  
-    
-    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY )
-    # img_gray = cv2.GaussianBlur(img_gray, (21, 21), 0)
+
+    # img = cv2.equalizeHist(img_weight)
+    b, g, r = cv2.split(img_final)
+    red = cv2.equalizeHist(r)
+    green = cv2.equalizeHist(g)
+    blue = cv2.equalizeHist(b)
+    img = cv2.merge((blue, green, red))
 
 
-    image_blur = cv2.Canny(img_gray,100,200)
-    # image_blur = cv2.dilate(image_blur, kernel)  
-    image_blur = 255-image_blur
-    image_blur = cv2.GaussianBlur(image_blur, (21, 21), 0)
-    image_blur = cv2.erode(image_blur, kernel)
-    img_pencil = cv2.cvtColor(image_blur, cv2.COLOR_GRAY2BGR )
+    #brightness decrement
+    value = 30
+    lim = 60
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+    
+    v[v > lim] -= value
 
     
     
-    # img_pencil = cv2.bitwise_not(img_pencil)
+
+    final_hsv = cv2.merge((h, s, v))
+    img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+
+
+    #signature
+    # font 
+    font = cv2.FONT_HERSHEY_SIMPLEX 
+
+    # org 
+    h,w,d = img.shape
     
-    img_pencil = cv2.bitwise_or(img_pencil, img_color)
-
-    for _ in range(numBilateralFilters):
-        img_pencil = cv2.bilateralFilter(img_pencil, 10, 15, 15)
-
-    # img_pencil = cv2.cvtColor(img_pencil, cv2.COLOR_BGR2GRAY )
-    # img_pencil = cv2.adaptiveThreshold(img_pencil,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,11,2)
-
-    # img_pencil = cv2.cvtColor(img_pencil, cv2.COLOR_GRAY2BGR )
-
-    # img = img_pencil
-
-    img = cv2.bitwise_and(img_pencil, img_color)
-     """
-    img_gray = cv2.GaussianBlur(img_color, (21, 21), 0)
-    img = cv2.addWeighted(img_color, 1.5, img_gray, -0.9, 0)
+    org = (w-60, h-20) 
     
-   #contrast_stretching
-   #histogram_equalization
+    # fontScale 
+    fontScale = 1
+
+    # Blue color in BGR 
+    color = (0, 0, 255) 
+
+    # Line thickness of 1 px 
+    thickness = 2
+
+    # Using cv2.putText() method 
+    img = cv2.putText(img, 'S.K.', org, font,  
+                   fontScale, color, thickness, cv2.LINE_AA) 
 
     
 
